@@ -63,6 +63,14 @@ jobs:
           git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
           git push origin "$NEW_TAG"
 
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.bump.outputs.new_tag }} \
+            --title "${{ steps.bump.outputs.new_tag }}" \
+            --generate-notes
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
