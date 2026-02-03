@@ -1,0 +1,24 @@
+# Secrets
+secrets/
+*.env
+.env
+
+# Rclone config (may contain credentials)
+rclone.conf
+
+# Backup files
+*.json
+backups/
+
+# Docker
+.docker/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,98 @@
+# Example: Using environment variables directly
+# Copy to docker-compose.yml and adjust for your setup
+
+services:
+  vaultwarden-backup:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
+    # build: .  # Uncomment to build locally
+    container_name: vaultwarden-backup
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+
+      # Vaultwarden server URL
+      - BW_URL=https://vault.example.com
+
+      # Backup schedule (cron format) - default: daily at 4am
+      - BACKUP_CRON=0 4 * * *
+
+      # Run backup immediately on container start
+      - BACKUP_ON_START=true
+
+      # Number of backups to retain (0 = unlimited)
+      - RETENTION_COUNT=7
+
+      # Rclone destination (see rclone docs for your provider)
+      - RCLONE_DEST=s3:my-bucket/vaultwarden-backups
+
+      # Rclone S3 configuration via environment
+      - RCLONE_CONFIG_S3_TYPE=s3
+      - RCLONE_CONFIG_S3_PROVIDER=AWS
+      - RCLONE_CONFIG_S3_ACCESS_KEY_ID=your-access-key
+      - RCLONE_CONFIG_S3_SECRET_ACCESS_KEY=your-secret-key
+      - RCLONE_CONFIG_S3_REGION=us-east-1
+
+      # Bitwarden API credentials (get from Vaultwarden web UI)
+      - BW_CLIENTID=user.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - BW_CLIENTSECRET=xxxxxxxxxxxxxxxxxxxx
+
+      # Master password for vault unlock
+      - BW_MASTER_PASSWORD=your-master-password
+
+      # Password to encrypt the backup file
+      - BACKUP_PASSWORD=your-backup-encryption-password
+
+---
+# Example: Using file-based secrets (more secure)
+
+services:
+  vaultwarden-backup:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
+    container_name: vaultwarden-backup
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - BW_URL=https://vault.example.com
+      - BACKUP_CRON=0 4 * * *
+      - RETENTION_COUNT=7
+      - RCLONE_DEST=s3:my-bucket/vaultwarden-backups
+
+      # Point to secret files
+      - BW_CLIENTID_FILE=/secrets/client_id
+      - BW_CLIENTSECRET_FILE=/secrets/client_secret
+      - BW_MASTER_PASSWORD_FILE=/secrets/master_password
+      - BACKUP_PASSWORD_FILE=/secrets/backup_password
+
+      # Rclone config via file
+      - RCLONE_CONFIG=/config/rclone.conf
+    volumes:
+      - ./secrets:/secrets:ro
+      - ./rclone.conf:/config/rclone.conf:ro
+
+---
+# Example: Backblaze B2
+
+services:
+  vaultwarden-backup:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
+    container_name: vaultwarden-backup
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - BW_URL=https://vault.example.com
+      - BACKUP_CRON=0 4 * * *
+      - RETENTION_COUNT=7
+
+      # B2 destination
+      - RCLONE_DEST=b2:my-bucket/vaultwarden
+      - RCLONE_CONFIG_B2_TYPE=b2
+      - RCLONE_CONFIG_B2_ACCOUNT=your-account-id
+      - RCLONE_CONFIG_B2_KEY=your-application-key
+
+      # Secrets via files
+      - BW_CLIENTID_FILE=/secrets/client_id
+      - BW_CLIENTSECRET_FILE=/secrets/client_secret
+      - BW_MASTER_PASSWORD_FILE=/secrets/master_password
+      - BACKUP_PASSWORD_FILE=/secrets/backup_password
+    volumes:
+      - ./secrets:/secrets:ro
