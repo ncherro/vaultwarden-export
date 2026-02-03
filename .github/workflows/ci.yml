@@ -23,25 +23,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bats
 
-      - name: Install kcov
-        run: |
-          sudo apt-get install -y binutils-dev libssl-dev libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev cmake g++ pkg-config
-          wget https://github.com/SimonKagstrom/kcov/releases/download/v42/kcov-amd64.tar.gz
-          tar xzf kcov-amd64.tar.gz
-          sudo mv usr/local/bin/kcov /usr/local/bin/
-
-      - name: Run tests with coverage
-        run: |
-          kcov --include-path=lib,backup.sh \
-            coverage \
-            bats test/
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          directory: coverage
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Run tests
+        run: bats test/
 
   build-and-push:
     needs: test
