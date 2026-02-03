@@ -53,11 +53,12 @@ docker-compose up -d
 | Variable | Description |
 |----------|-------------|
 | `BW_URL` | Your Vaultwarden server URL |
-| `RCLONE_DEST` | Rclone destination (e.g., `s3:bucket/path`) |
 | `BW_CLIENTID` | Bitwarden API client ID |
 | `BW_CLIENTSECRET` | Bitwarden API client secret |
 | `BW_MASTER_PASSWORD` | Master password to unlock the vault |
 | `BACKUP_PASSWORD` | Password to encrypt the backup file |
+| `RCLONE_DEST` | Rclone destination (e.g., `s3:bucket/path`) |
+| `RCLONE_CONFIG_*` | Rclone backend config (see [Storage Backends](#storage-backends)) |
 
 ### Optional
 
@@ -72,7 +73,9 @@ docker-compose up -d
 
 ### File-Based Secrets
 
-For better security, use file-based secrets. Append `_FILE` to any secret variable:
+For better security, use file-based secrets instead of environment variables. Environment variables can leak through process listings, debug logs, and container inspection. File-based secrets avoid this by reading values from files at runtime.
+
+Append `_FILE` to any secret variable:
 
 ```yaml
 environment:
@@ -88,7 +91,13 @@ volumes:
   - ./secrets:/secrets:ro
 ```
 
-This works with any `RCLONE_CONFIG_*` variable, so you can use file-based secrets for any rclone backend (S3, B2, GCS, etc.).
+Restrict file permissions so only the owner can read them:
+
+```bash
+chmod 600 secrets/*
+```
+
+The `_FILE` suffix works with all secret variables (`BW_CLIENTID`, `BW_CLIENTSECRET`, `BW_MASTER_PASSWORD`, `BACKUP_PASSWORD`) and any `RCLONE_CONFIG_*` variable.
 
 ## Getting Bitwarden API Credentials
 
@@ -176,6 +185,10 @@ docker build -t vaultwarden-export .
 - **Backup password**: Use a strong, unique password stored separately from your master password
 - **File-based secrets**: Preferred over environment variables for production
 - **Master password exposure**: This tool requires your master password - consider the implications for your threat model
+
+## Issues
+
+Found a bug or have a feature request? [Open an issue](https://github.com/ncherro/vaultwarden-export/issues) on GitHub.
 
 ## Disclaimer
 
