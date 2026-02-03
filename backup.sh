@@ -1,48 +1,9 @@
 #!/bin/sh
 set -e
 
-# Helper function to get secret from env var or file
-get_secret() {
-  var_name="$1"
-  file_var_name="${var_name}_FILE"
-
-  # Check if file path is provided
-  eval file_path="\$$file_var_name"
-  if [ -n "$file_path" ] && [ -f "$file_path" ]; then
-    tr -d '\n\r' < "$file_path"
-    return
-  fi
-
-  # Fall back to direct env var
-  eval value="\$$var_name"
-  if [ -n "$value" ]; then
-    printf '%s' "$value"
-    return
-  fi
-
-  echo "Error: $var_name or $file_var_name must be set" >&2
-  return 1
-}
-
-# Process RCLONE_CONFIG_*_FILE env vars
-# Reads file contents and exports as RCLONE_CONFIG_* for rclone to use
-load_rclone_secrets() {
-  for var_name in $(env | grep '^RCLONE_CONFIG_.*_FILE=' | cut -d= -f1); do
-    eval file_path="\$$var_name"
-    # Strip _FILE suffix to get the target var name
-    target_var="${var_name%_FILE}"
-    if [ -f "$file_path" ]; then
-      # Read file, strip trailing whitespace
-      value=$(tr -d '\n\r' < "$file_path")
-      # Set and export the variable
-      eval "$target_var=\$value"
-      export "$target_var"
-      echo "  Loaded $target_var from file"
-    else
-      echo "Warning: File not found for $var_name: $file_path" >&2
-    fi
-  done
-}
+# Load shared functions
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/lib/functions.sh"
 
 # Temp file for export
 TEMP_FILE="/tmp/vault.json"
@@ -79,8 +40,8 @@ fi
 RETENTION_COUNT="${RETENTION_COUNT:-7}"
 BACKUP_FILENAME="${BACKUP_FILENAME:-vaultwarden-%Y-%m-%d.json}"
 DATE_FILENAME=$(date +"$BACKUP_FILENAME")
-# Extract prefix before first % for retention matching
-BACKUP_PREFIX="${BACKUP_FILENAME%%%*}"
+# Extract prefix for retention matching
+BACKUP_PREFIX=$(get_backup_prefix "$BACKUP_FILENAME")
 
 echo "Starting Vaultwarden backup..."
 echo "  Server: $BW_URL"

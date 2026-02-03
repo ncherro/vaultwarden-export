@@ -12,6 +12,7 @@ RUN apk add --no-cache \
     && mkdir -p /root/.config/rclone \
     && touch /root/.config/rclone/rclone.conf
 
+COPY lib/ /lib/
 COPY entrypoint.sh /entrypoint.sh
 COPY backup.sh /backup.sh
 RUN chmod +x /entrypoint.sh /backup.sh
