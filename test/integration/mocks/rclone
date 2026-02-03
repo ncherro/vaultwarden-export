@@ -1,0 +1,21 @@
+#!/bin/sh
+# Mock rclone
+
+case "$1" in
+  copyto)
+    echo "Copied $2 to $3"
+    ;;
+  lsf)
+    # Return some fake backup files for retention testing
+    echo "vaultwarden-2024-01-01.json"
+    echo "vaultwarden-2024-01-02.json"
+    echo "vaultwarden-2024-01-03.json"
+    ;;
+  deletefile)
+    echo "Deleted $2"
+    ;;
+  *)
+    echo "Unknown command: $1" >&2
+    exit 1
+    ;;
+esac

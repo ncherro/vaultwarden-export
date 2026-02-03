@@ -1,0 +1,36 @@
+#!/bin/sh
+# Mock Bitwarden CLI
+
+case "$1" in
+  config)
+    echo "Config saved"
+    ;;
+  login)
+    echo "You are logged in!"
+    ;;
+  unlock)
+    # Return a fake session token
+    echo "fake-session-token"
+    ;;
+  export)
+    # Create a fake export file
+    output_file=""
+    for arg in "$@"; do
+      case "$prev" in
+        --output) output_file="$arg" ;;
+      esac
+      prev="$arg"
+    done
+    if [ -n "$output_file" ]; then
+      echo '{"encrypted": true, "data": "fake-backup-data"}' > "$output_file"
+    fi
+    echo "Export complete"
+    ;;
+  logout)
+    echo "Logged out"
+    ;;
+  *)
+    echo "Unknown command: $1" >&2
+    exit 1
+    ;;
+esac
