@@ -76,13 +76,19 @@ For better security, use file-based secrets. Append `_FILE` to any secret variab
 
 ```yaml
 environment:
+  # Bitwarden secrets
   - BW_CLIENTID_FILE=/secrets/client_id
   - BW_CLIENTSECRET_FILE=/secrets/client_secret
   - BW_MASTER_PASSWORD_FILE=/secrets/master_password
   - BACKUP_PASSWORD_FILE=/secrets/backup_password
+  # Rclone secrets (any RCLONE_CONFIG_* var supports _FILE)
+  - RCLONE_CONFIG_S3_ACCESS_KEY_ID_FILE=/secrets/aws_access_key_id
+  - RCLONE_CONFIG_S3_SECRET_ACCESS_KEY_FILE=/secrets/aws_secret_access_key
 volumes:
   - ./secrets:/secrets:ro
 ```
+
+This works with any `RCLONE_CONFIG_*` variable, so you can use file-based secrets for any rclone backend (S3, B2, GCS, etc.).
 
 ## Getting Bitwarden API Credentials
 

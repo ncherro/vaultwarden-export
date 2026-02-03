@@ -24,6 +24,23 @@ get_secret() {
   return 1
 }
 
+# Process RCLONE_CONFIG_*_FILE env vars
+# Reads file contents and exports as RCLONE_CONFIG_* for rclone to use
+load_rclone_secrets() {
+  for var_name in $(env | grep '^RCLONE_CONFIG_.*_FILE=' | cut -d= -f1); do
+    eval file_path="\$$var_name"
+    # Strip _FILE suffix to get the target var name
+    target_var="${var_name%_FILE}"
+    if [ -f "$file_path" ]; then
+      value=$(cat "$file_path")
+      export "$target_var=$value"
+      echo "  Loaded $target_var from file"
+    else
+      echo "Warning: File not found for $var_name: $file_path" >&2
+    fi
+  done
+}
+
 # Cleanup function
 cleanup() {
   rm -f /tmp/vault.json
@@ -37,6 +54,9 @@ export BW_CLIENTID=$(get_secret BW_CLIENTID)
 export BW_CLIENTSECRET=$(get_secret BW_CLIENTSECRET)
 BW_MASTER_PASSWORD=$(get_secret BW_MASTER_PASSWORD)
 BACKUP_PASSWORD=$(get_secret BACKUP_PASSWORD)
+
+# Load rclone secrets from files
+load_rclone_secrets
 
 # Validate required config
 if [ -z "$BW_URL" ]; then
