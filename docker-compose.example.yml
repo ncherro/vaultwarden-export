@@ -2,10 +2,10 @@
 # Copy to docker-compose.yml and adjust for your setup
 
 services:
-  vaultwarden-backup:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
+  vaultwarden-export:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
     # build: .  # Uncomment to build locally
-    container_name: vaultwarden-backup
+    container_name: vaultwarden-export
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles
@@ -23,7 +23,7 @@ services:
       - RETENTION_COUNT=7
 
       # Rclone destination (see rclone docs for your provider)
-      - RCLONE_DEST=s3:my-bucket/vaultwarden-backups
+      - RCLONE_DEST=s3:my-bucket/vaultwarden-exports
 
       # Rclone S3 configuration via environment
       - RCLONE_CONFIG_S3_TYPE=s3
@@ -46,16 +46,16 @@ services:
 # Example: Using file-based secrets (more secure)
 
 services:
-  vaultwarden-backup:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
-    container_name: vaultwarden-backup
+  vaultwarden-export:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
+    container_name: vaultwarden-export
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles
       - BW_URL=https://vault.example.com
       - BACKUP_CRON=0 4 * * *
       - RETENTION_COUNT=7
-      - RCLONE_DEST=s3:my-bucket/vaultwarden-backups
+      - RCLONE_DEST=s3:my-bucket/vaultwarden-exports
 
       # Point to secret files
       - BW_CLIENTID_FILE=/secrets/client_id
@@ -73,9 +73,9 @@ services:
 # Example: Backblaze B2
 
 services:
-  vaultwarden-backup:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-backup:latest
-    container_name: vaultwarden-backup
+  vaultwarden-export:
+    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
+    container_name: vaultwarden-export
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles

@@ -1,7 +1,7 @@
-# Vaultwarden Backup
+# Vaultwarden Export
 
-[![Build](https://github.com/ncherro/vaultwarden-backup/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ncherro/vaultwarden-backup/actions/workflows/docker-publish.yml)
-[![GitHub release](https://img.shields.io/github/v/release/ncherro/vaultwarden-backup?sort=semver)](https://github.com/ncherro/vaultwarden-backup/releases)
+[![Build](https://github.com/ncherro/vaultwarden-export/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ncherro/vaultwarden-export/actions/workflows/docker-publish.yml)
+[![GitHub release](https://img.shields.io/github/v/release/ncherro/vaultwarden-export?sort=semver)](https://github.com/ncherro/vaultwarden-export/releases)
 
 Automated encrypted backups for [Vaultwarden](https://github.com/dani-garcia/vaultwarden) using the official Bitwarden CLI.
 
@@ -25,8 +25,8 @@ This tool uses the **Bitwarden CLI** to create a proper encrypted export:
 ```yaml
 # docker-compose.yml
 services:
-  vaultwarden-backup:
-    image: ghcr.io/ncherro/vaultwarden-backup:latest
+  vaultwarden-export:
+    image: ghcr.io/ncherro/vaultwarden-export:latest
     restart: unless-stopped
     environment:
       - BW_URL=https://vault.example.com
@@ -156,13 +156,13 @@ docker run --rm \
   -e BACKUP_PASSWORD=xxx \
   -e RUN_ONCE=true \
   -v /path/to/backups:/backups \
-  ghcr.io/ncherro/vaultwarden-backup:latest
+  ghcr.io/ncherro/vaultwarden-export:latest
 ```
 
 ## Building
 
 ```bash
-docker build -t vaultwarden-backup .
+docker build -t vaultwarden-export .
 ```
 
 ## Security Considerations
