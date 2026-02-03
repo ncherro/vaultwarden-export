@@ -9,14 +9,14 @@ get_secret() {
   # Check if file path is provided
   eval file_path="\$$file_var_name"
   if [ -n "$file_path" ] && [ -f "$file_path" ]; then
-    cat "$file_path"
+    tr -d '\n\r' < "$file_path"
     return
   fi
 
   # Fall back to direct env var
   eval value="\$$var_name"
   if [ -n "$value" ]; then
-    echo "$value"
+    printf '%s' "$value"
     return
   fi
 
@@ -32,8 +32,11 @@ load_rclone_secrets() {
     # Strip _FILE suffix to get the target var name
     target_var="${var_name%_FILE}"
     if [ -f "$file_path" ]; then
-      value=$(cat "$file_path")
-      export "$target_var=$value"
+      # Read file, strip trailing whitespace
+      value=$(tr -d '\n\r' < "$file_path")
+      # Set and export the variable
+      eval "$target_var=\$value"
+      export "$target_var"
       echo "  Loaded $target_var from file"
     else
       echo "Warning: File not found for $var_name: $file_path" >&2
