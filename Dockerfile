@@ -6,7 +6,11 @@ RUN apk add --no-cache \
     rclone \
     tzdata \
     && npm install -g @bitwarden/cli@2024.9.0 \
-    && rm -rf /root/.npm
+    && rm -rf /root/.npm \
+    && mkdir -p "/root/.config/Bitwarden CLI" \
+    && echo '{}' > "/root/.config/Bitwarden CLI/data.json" \
+    && mkdir -p /root/.config/rclone \
+    && touch /root/.config/rclone/rclone.conf
 
 COPY entrypoint.sh /entrypoint.sh
 COPY backup.sh /backup.sh
