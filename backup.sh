@@ -95,7 +95,7 @@ echo "Logging in..."
 bw login --apikey
 
 echo "Unlocking vault..."
-BW_SESSION=$(BW_PASSWORD="$BW_MASTER_PASSWORD" bw unlock --raw)
+BW_SESSION=$(printf '%s' "$BW_MASTER_PASSWORD" | bw unlock --raw)
 export BW_SESSION
 
 # Export vault
