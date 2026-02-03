@@ -3,7 +3,7 @@
 [![Build](https://github.com/ncherro/vaultwarden-export/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/ncherro/vaultwarden-export/actions/workflows/docker-publish.yml)
 [![GitHub release](https://img.shields.io/github/v/release/ncherro/vaultwarden-export?sort=semver)](https://github.com/ncherro/vaultwarden-export/pkgs/container/vaultwarden-export)
 
-Automated encrypted backups for [Vaultwarden](https://github.com/dani-garcia/vaultwarden) using the official Bitwarden CLI.
+Automated encrypted backups for [Vaultwarden](https://github.com/dani-garcia/vaultwarden) using the official [Bitwarden CLI](https://bitwarden.com/help/cli/).
 
 ## Why This Approach?
 
