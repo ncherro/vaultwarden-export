@@ -53,10 +53,10 @@ trap cleanup EXIT
 
 # Load secrets
 echo "Loading secrets..."
-export BW_CLIENTID=$(get_secret BW_CLIENTID)
-export BW_CLIENTSECRET=$(get_secret BW_CLIENTSECRET)
-BW_MASTER_PASSWORD=$(get_secret BW_MASTER_PASSWORD)
-BACKUP_PASSWORD=$(get_secret BACKUP_PASSWORD)
+export BW_CLIENTID=$(get_secret BW_CLIENTID) && echo "  Loaded BW_CLIENTID"
+export BW_CLIENTSECRET=$(get_secret BW_CLIENTSECRET) && echo "  Loaded BW_CLIENTSECRET"
+BW_MASTER_PASSWORD=$(get_secret BW_MASTER_PASSWORD) && echo "  Loaded BW_MASTER_PASSWORD"
+BACKUP_PASSWORD=$(get_secret BACKUP_PASSWORD) && echo "  Loaded BACKUP_PASSWORD"
 
 # Load rclone secrets from files
 load_rclone_secrets
