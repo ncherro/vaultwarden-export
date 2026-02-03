@@ -11,4 +11,6 @@ ignore:
   - "test/**"
   - "entrypoint.sh"
   - "*.md"
+  - "*.yml"
   - "Dockerfile"
+  - "LICENSE"
