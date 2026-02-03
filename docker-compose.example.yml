@@ -3,7 +3,7 @@
 
 services:
   vaultwarden-export:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
+    image: ghcr.io/ncherro/vaultwarden-export:latest
     # build: .  # Uncomment to build locally
     container_name: vaultwarden-export
     restart: unless-stopped
@@ -47,7 +47,7 @@ services:
 
 services:
   vaultwarden-export:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
+    image: ghcr.io/ncherro/vaultwarden-export:latest
     container_name: vaultwarden-export
     restart: unless-stopped
     environment:
@@ -74,7 +74,7 @@ services:
 
 services:
   vaultwarden-export:
-    image: ghcr.io/YOUR_USERNAME/vaultwarden-export:latest
+    image: ghcr.io/ncherro/vaultwarden-export:latest
     container_name: vaultwarden-export
     restart: unless-stopped
     environment:
