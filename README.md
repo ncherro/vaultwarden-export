@@ -171,6 +171,10 @@ docker build -t vaultwarden-export .
 - **File-based secrets**: Preferred over environment variables for production
 - **Master password exposure**: This tool requires your master password - consider the implications for your threat model
 
+## Disclaimer
+
+This tool requires access to your Vaultwarden master password. Use at your own risk. The authors are not responsible for data loss or security incidents.
+
 ## License
 
 MIT
