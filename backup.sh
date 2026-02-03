@@ -44,9 +44,12 @@ load_rclone_secrets() {
   done
 }
 
+# Temp file for export
+TEMP_FILE="/tmp/vault.json"
+
 # Cleanup function
 cleanup() {
-  rm -f /tmp/vault.json
+  rm -f "$TEMP_FILE"
   bw logout 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -76,6 +79,8 @@ fi
 RETENTION_COUNT="${RETENTION_COUNT:-7}"
 BACKUP_FILENAME="${BACKUP_FILENAME:-vaultwarden-%Y-%m-%d.json}"
 DATE_FILENAME=$(date +"$BACKUP_FILENAME")
+# Extract prefix before first % for retention matching
+BACKUP_PREFIX="${BACKUP_FILENAME%%%*}"
 
 echo "Starting Vaultwarden backup..."
 echo "  Server: $BW_URL"
@@ -90,22 +95,22 @@ echo "Logging in..."
 bw login --apikey
 
 echo "Unlocking vault..."
-BW_SESSION=$(echo "$BW_MASTER_PASSWORD" | bw unlock --raw)
+BW_SESSION=$(BW_PASSWORD="$BW_MASTER_PASSWORD" bw unlock --raw)
 export BW_SESSION
 
 # Export vault
 echo "Exporting vault..."
-bw export --format encrypted_json --password "$BACKUP_PASSWORD" --output /tmp/vault.json
+bw export --format encrypted_json --password "$BACKUP_PASSWORD" --output "$TEMP_FILE"
 
 # Verify export exists and has content
-if [ ! -s /tmp/vault.json ]; then
+if [ ! -s "$TEMP_FILE" ]; then
   echo "Error: Export file is empty or missing" >&2
   exit 1
 fi
 
 # Upload to destination
 echo "Uploading to $RCLONE_DEST..."
-if ! rclone copyto /tmp/vault.json "$RCLONE_DEST/$DATE_FILENAME"; then
+if ! rclone copyto "$TEMP_FILE" "$RCLONE_DEST/$DATE_FILENAME"; then
   echo "Error: Upload failed" >&2
   exit 1
 fi
@@ -116,9 +121,9 @@ echo "Upload complete."
 if [ "$RETENTION_COUNT" -gt 0 ]; then
   echo "Applying retention policy (keeping $RETENTION_COUNT backups)..."
 
-  # List files, sort by name (date), skip the newest N, delete the rest
+  # List files matching prefix, sort by name (date), skip the newest N, delete the rest
   rclone lsf "$RCLONE_DEST" --files-only 2>/dev/null | \
-    grep -E '^vaultwarden-.*\.json$' | \
+    grep "^${BACKUP_PREFIX}" | \
     sort -r | \
     tail -n +$((RETENTION_COUNT + 1)) | \
     while read -r file; do
