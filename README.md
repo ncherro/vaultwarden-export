@@ -71,6 +71,49 @@ docker-compose up -d
 | `BACKUP_FILENAME` | `vaultwarden-%Y-%m-%d.json` | Filename pattern |
 | `TZ` | `UTC` | Timezone for cron |
 
+### Webhook Notifications
+
+Get notified on backup success or failure via webhooks. Works with Home Assistant, Discord, Slack, ntfy, or any HTTP endpoint.
+
+| Variable | Description |
+|----------|-------------|
+| `WEBHOOK_ERROR_URL` | URL to POST on failure |
+| `WEBHOOK_ERROR_MESSAGE` | Custom error payload (optional) |
+| `WEBHOOK_SUCCESS_URL` | URL to POST on success |
+| `WEBHOOK_SUCCESS_MESSAGE` | Custom success payload (optional) |
+
+**Default payload:**
+```json
+{"service": "vaultwarden-export", "message": "Backup completed successfully", "timestamp": "2024-01-15T04:00:00+00:00"}
+```
+
+**Placeholders for custom messages:** `{message}`, `{service}`, `{timestamp}`
+
+**Examples:**
+
+Home Assistant (requires [webhook automation](https://www.home-assistant.io/docs/automation/trigger/#webhook-trigger)):
+```yaml
+- WEBHOOK_ERROR_URL=http://192.168.1.100:8123/api/webhook/backup-failed
+```
+
+Discord:
+```yaml
+- WEBHOOK_ERROR_URL=https://discord.com/api/webhooks/xxx/yyy
+- WEBHOOK_ERROR_MESSAGE={"content": "🚨 {service}: {message}"}
+```
+
+Slack:
+```yaml
+- WEBHOOK_ERROR_URL=https://hooks.slack.com/services/xxx
+- WEBHOOK_ERROR_MESSAGE={"text": "{service}: {message}"}
+```
+
+ntfy:
+```yaml
+- WEBHOOK_ERROR_URL=https://ntfy.sh/your-topic
+- WEBHOOK_ERROR_MESSAGE={message}
+```
+
 ### File-Based Secrets
 
 For better security, use file-based secrets instead of environment variables. Environment variables can leak through process listings, debug logs, and container inspection. File-based secrets avoid this by reading values from files at runtime.

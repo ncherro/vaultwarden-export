@@ -4,6 +4,7 @@ RUN apk add --no-cache \
     nodejs \
     npm \
     rclone \
+    curl \
     tzdata \
     && npm install -g @bitwarden/cli@2024.9.0 \
     && rm -rf /root/.npm \

@@ -7,11 +7,51 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Temp file for export
 TEMP_FILE="/tmp/vault.json"
+BACKUP_SUCCESS=false
+
+# Send webhook notification
+send_webhook() {
+  url="$1"
+  custom_message="$2"
+  default_message="$3"
+
+  if [ -n "$url" ]; then
+    if [ -n "$custom_message" ]; then
+      # Replace placeholders in custom message
+      body=$(echo "$custom_message" | sed \
+        -e "s|{message}|$default_message|g" \
+        -e "s|{service}|vaultwarden-export|g" \
+        -e "s|{timestamp}|$(date -Iseconds)|g")
+    else
+      # Default JSON payload
+      body="{\"service\": \"vaultwarden-export\", \"message\": \"$default_message\", \"timestamp\": \"$(date -Iseconds)\"}"
+    fi
+
+    curl -s -X POST "$url" \
+      -H "Content-Type: application/json" \
+      -d "$body" \
+      || echo "Warning: Failed to send webhook notification" >&2
+  fi
+}
+
+notify_error() {
+  send_webhook "$WEBHOOK_ERROR_URL" "$WEBHOOK_ERROR_MESSAGE" "$1"
+}
+
+notify_success() {
+  send_webhook "$WEBHOOK_SUCCESS_URL" "$WEBHOOK_SUCCESS_MESSAGE" "$1"
+}
 
 # Cleanup function
 cleanup() {
+  exit_code=$?
   rm -f "$TEMP_FILE"
   bw logout 2>/dev/null || true
+
+  # Send failure notification if backup didn't complete successfully
+  if [ "$BACKUP_SUCCESS" != "true" ] && [ $exit_code -ne 0 ]; then
+    notify_error "Backup failed with exit code $exit_code"
+  fi
 }
 trap cleanup EXIT
 
@@ -93,4 +133,6 @@ if [ "$RETENTION_COUNT" -gt 0 ]; then
     done
 fi
 
+BACKUP_SUCCESS=true
 echo "Backup completed successfully at $(date)"
+notify_success "Backup completed successfully"
