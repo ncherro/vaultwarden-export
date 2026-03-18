@@ -40,6 +40,8 @@ services:
       - BW_CLIENTSECRET=xxx
       - BW_MASTER_PASSWORD=xxx
       - BACKUP_PASSWORD=xxx
+      # Optional: export an organization vault instead of user vault
+      # - ORG_ID=your-organization-id
 ```
 
 ```bash
@@ -70,6 +72,23 @@ docker-compose up -d
 | `RETENTION_COUNT` | `7` | Backups to keep (0 = unlimited) |
 | `BACKUP_FILENAME` | `vaultwarden-%Y-%m-%d.json` | Filename pattern |
 | `TZ` | `UTC` | Timezone for cron |
+
+### Organization Export
+
+By default, this tool exports the user vault.
+
+You can export an organization vault instead by setting the ORG_ID environment variable:
+
+```yaml
+environment:
+  - ORG_ID=your-organization-id
+```
+### Notes
+
+- Your Bitwarden account must have sufficient permissions (admin or owner) to export organization data
+- The export format and encryption remain the same (`encrypted_json`)
+- This replaces the user vault export (no combined export)
+
 
 ### Webhook Notifications
 

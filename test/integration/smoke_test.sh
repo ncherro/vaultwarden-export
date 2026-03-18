@@ -17,6 +17,7 @@ docker run --rm \
   -e BW_MASTER_PASSWORD=test-master-password \
   -e BACKUP_PASSWORD=test-backup-password \
   -e RCLONE_DEST=/backups \
+  -e ORG_ID=00000000-0000-0000-0000-000000000000 \
   -e RUN_ONCE=true \
   -e RETENTION_COUNT=2 \
   -e PATH=/mocks:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
