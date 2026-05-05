@@ -83,12 +83,12 @@ You can export an organization vault instead by setting the ORG_ID environment v
 environment:
   - ORG_ID=your-organization-id
 ```
+
 ### Notes
 
 - Your Bitwarden account must have sufficient permissions (admin or owner) to export organization data
 - The export format and encryption remain the same (`encrypted_json`)
 - This replaces the user vault export (no combined export)
-
 
 ### Webhook Notifications
 
