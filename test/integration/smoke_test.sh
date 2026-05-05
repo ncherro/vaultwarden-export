@@ -8,22 +8,34 @@ echo "=== Smoke Test ==="
 echo "Building Docker image..."
 docker build -t vaultwarden-export-test "$PROJECT_DIR"
 
-echo ""
-echo "Running container with mocked commands..."
-docker run --rm \
+COMMON_ARGS="\
   -e BW_URL=https://vault.example.com \
   -e BW_CLIENTID=test-client-id \
   -e BW_CLIENTSECRET=test-client-secret \
   -e BW_MASTER_PASSWORD=test-master-password \
   -e BACKUP_PASSWORD=test-backup-password \
   -e RCLONE_DEST=/backups \
-  -e ORG_ID=00000000-0000-0000-0000-000000000000 \
   -e RUN_ONCE=true \
   -e RETENTION_COUNT=2 \
   -e PATH=/mocks:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-  -v "$SCRIPT_DIR/mocks:/mocks:ro" \
+  -v $SCRIPT_DIR/mocks:/mocks:ro"
+
+echo ""
+echo "--- Test 1: user vault export ---"
+docker run --rm \
+  $COMMON_ARGS \
   -v /tmp/vaultwarden-export-test:/backups \
   vaultwarden-export-test
+echo "Test 1 passed."
+
+echo ""
+echo "--- Test 2: organization vault export ---"
+docker run --rm \
+  $COMMON_ARGS \
+  -e ORG_ID=00000000-0000-0000-0000-000000000000 \
+  -v /tmp/vaultwarden-export-test:/backups \
+  vaultwarden-export-test
+echo "Test 2 passed."
 
 echo ""
 echo "=== Smoke Test Passed ==="
