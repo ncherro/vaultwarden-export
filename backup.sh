@@ -9,6 +9,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEMP_FILE="/tmp/vault.json"
 BACKUP_SUCCESS=false
 
+# Organization export option
+ORG_ID="${ORG_ID:-}"
+
 # Send webhook notification
 send_webhook() {
   url="$1"
@@ -100,8 +103,13 @@ BW_SESSION=$(printf '%s' "$BW_MASTER_PASSWORD" | bw unlock --raw)
 export BW_SESSION
 
 # Export vault
-echo "Exporting vault..."
-bw export --format encrypted_json --password "$BACKUP_PASSWORD" --output "$TEMP_FILE"
+if [ -n "$ORG_ID" ]; then
+  echo "Exporting organization vault ($ORG_ID)..."
+  bw export --organizationid "$ORG_ID" --format encrypted_json --password "$BACKUP_PASSWORD" --output "$TEMP_FILE"
+else
+  echo "Exporting user vault..."
+  bw export --format encrypted_json --password "$BACKUP_PASSWORD" --output "$TEMP_FILE"
+fi
 
 # Verify export exists and has content
 if [ ! -s "$TEMP_FILE" ]; then
