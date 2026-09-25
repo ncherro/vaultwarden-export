@@ -19,7 +19,7 @@ services:
       # Run backup immediately on container start
       - BACKUP_ON_START=true
 
-      # Number of backups to retain (0 = unlimited)
+      # Number of backups to retain per remote (0 = unlimited)
       - RETENTION_COUNT=7
 
       # Rclone destination (see rclone docs for your provider)
@@ -41,6 +41,45 @@ services:
 
       # Password to encrypt the backup file
       - BACKUP_PASSWORD=your-backup-encryption-password
+
+---
+# Example: Multiple remote destinations
+# Upload backups to multiple cloud providers simultaneously
+
+services:
+  vaultwarden-export:
+    image: ghcr.io/ncherro/vaultwarden-export:latest
+    # build: .
+    container_name: vaultwarden-export
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Madrid
+
+      - BW_URL=https://vault.example.com
+      - BACKUP_CRON=0 5 * * *
+      - RETENTION_COUNT=60
+
+      # Primary remote
+      - RCLONE_REMOTE_NAME=remote_name
+      - RCLONE_REMOTE_DIR=path/to/backup
+
+      # Additional remotes (sequential numbering, no gaps)
+      - RCLONE_REMOTE_NAME_1=remote_name_1
+      - RCLONE_REMOTE_DIR_1=path/to/backup
+      - RCLONE_REMOTE_NAME_2=remote_name_2
+      - RCLONE_REMOTE_DIR_2=path/to/backup
+
+      # Use existing rclone config from another container's volume
+      - RCLONE_CONFIG=/config/rclone.conf
+
+      # Secrets
+      - BW_CLIENTID=user.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - BW_CLIENTSECRET=xxxxxxxxxxxxxxxxxxxx
+      - BW_MASTER_PASSWORD=your-master-password
+      - BACKUP_PASSWORD=your-backup-encryption-password
+
+    volumes:
+      - vaultwarden-rclone-data:/config/
 
 ---
 # Example: Using file-based secrets (more secure)
@@ -96,3 +135,5 @@ services:
       - BACKUP_PASSWORD_FILE=/secrets/backup_password
     volumes:
       - ./secrets:/secrets:ro
+
+---

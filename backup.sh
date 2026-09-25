@@ -74,10 +74,36 @@ if [ -z "$BW_URL" ]; then
   exit 1
 fi
 
-if [ -z "$RCLONE_DEST" ]; then
-  echo "Error: RCLONE_DEST must be set (e.g., s3:bucket/path)" >&2
-  exit 1
-fi
+# Build list of destinations from RCLONE_REMOTE_NAME/DIR and RCLONE_REMOTE_NAME_N/DIR_N
+# This follows the same pattern as ttionya/vaultwarden-backup: https://github.com/ttionya/vaultwarden-backup/blob/master/docs/multiple-remote-destinations.md
+#   Primary: RCLONE_REMOTE_NAME + RCLONE_REMOTE_DIR (defaults: BitwardenBackup + /BitwardenBackup/)
+#   Additional: RCLONE_REMOTE_NAME_1 + RCLONE_REMOTE_DIR_1, RCLONE_REMOTE_NAME_2 + RCLONE_REMOTE_DIR_2, etc.
+# Sequential numbering must be consecutive; gaps will stop parsing.
+REMOTE_NAMES=""
+REMOTE_DIRS=""
+
+# Primary destination
+_PRIMARY_REMOTE="${RCLONE_REMOTE_NAME:-BitwardenBackup}"
+_PRIMARY_DIR="${RCLONE_REMOTE_DIR:-/BitwardenBackup/}"
+REMOTE_NAMES="${_PRIMARY_REMOTE}"
+REMOTE_DIRS="${_PRIMARY_DIR}"
+
+# Additional destinations (numbered 1, 2, 3, ...)
+_N=1
+while true; do
+  eval "_NAME_VAR=\"RCLONE_REMOTE_NAME_${_N}\""
+  eval "_DIR_VAR=\"RCLONE_REMOTE_DIR_${_N}\""
+  eval "_NAME_VAL=\"\${$_NAME_VAR}\""
+  eval "_DIR_VAL=\"\${$_DIR_VAR}\""
+
+  if [ -z "$_NAME_VAL" ] || [ -z "$_DIR_VAL" ]; then
+    break
+  fi
+
+  REMOTE_NAMES="${REMOTE_NAMES} ${_NAME_VAL}"
+  REMOTE_DIRS="${REMOTE_DIRS} ${_DIR_VAL}"
+  _N=$((_N + 1))
+done
 
 # Configuration
 RETENTION_COUNT="${RETENTION_COUNT:-7}"
@@ -86,10 +112,19 @@ DATE_FILENAME=$(date +"$BACKUP_FILENAME")
 # Extract prefix for retention matching
 BACKUP_PREFIX=$(get_backup_prefix "$BACKUP_FILENAME")
 
+# Rclone config
+RCLONE_CONFIG_PATH="${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}"
+RCLONE_EXTRA_FLAGS="${RCLONE_EXTRA_FLAGS:---transfers=4 --checkers=8 --contimeout=60s --timeout=300s --retries=3}"
+
 echo "Starting Vaultwarden backup..."
 echo "  Server: $BW_URL"
-echo "  Destination: $RCLONE_DEST"
 echo "  Filename: $DATE_FILENAME"
+_i=1
+for _remote in $REMOTE_NAMES; do
+  _dir=$(echo "$REMOTE_DIRS" | cut -d' ' -f$_i)
+  echo "  Destination ${_i}: ${_remote}:${_dir}"
+  _i=$((_i + 1))
+done
 
 # Configure and login to Bitwarden
 echo "Configuring Bitwarden CLI..."
@@ -117,30 +152,86 @@ if [ ! -s "$TEMP_FILE" ]; then
   exit 1
 fi
 
-# Upload to destination
-echo "Uploading to $RCLONE_DEST..."
-if ! rclone copyto "$TEMP_FILE" "$RCLONE_DEST/$DATE_FILENAME"; then
-  echo "Error: Upload failed" >&2
-  exit 1
-fi
+# Upload function for a single remote
+upload_to_remote() {
+  _remote="$1"
+  _dir="$2"
+  _filename="$3"
+  _config="$4"
+  _flags="$5"
 
-echo "Upload complete."
+  _dest="${_remote}:${_dir}"
+  echo "  Uploading to ${_dest}${_filename}..."
+  if rclone copyto "$TEMP_FILE" "${_dest}${_filename}" --config "$_config" $_flags --log-level WARNING 2>&1; then
+    echo "  [OK] ${_filename} -> ${_remote}:${_dir}"
+    return 0
+  else
+    echo "  [FAIL] ${_filename} -> ${_remote}:${_dir}" >&2
+    return 1
+  fi
+}
 
-# Retention: keep only the last N backups
-if [ "$RETENTION_COUNT" -gt 0 ]; then
-  echo "Applying retention policy (keeping $RETENTION_COUNT backups)..."
+# Retention function for a single remote
+apply_retention() {
+  _remote="$1"
+  _dir="$2"
+  _config="$3"
+  _flags="$4"
+  _count="$5"
+  _prefix="$6"
 
-  # List files matching prefix, sort by name (date), skip the newest N, delete the rest
-  rclone lsf "$RCLONE_DEST" --files-only 2>/dev/null | \
-    grep "^${BACKUP_PREFIX}" | \
+  if [ "$_count" -le 0 ]; then
+    return 0
+  fi
+
+  echo "  Pruning old backups on ${_remote}:${_dir} (keeping ${_count})..."
+  rclone lsf "${_remote}:${_dir}" --config "$_config" $_flags --files-only 2>/dev/null | \
+    grep "^${_prefix}" | \
     sort -r | \
-    tail -n +$((RETENTION_COUNT + 1)) | \
+    tail -n +"$((_count + 1))" | \
     while read -r file; do
-      echo "  Deleting old backup: $file"
-      rclone deletefile "$RCLONE_DEST/$file" || true
+      echo "    Deleting old backup: $file"
+      rclone deletefile "${_remote}:${_dir}${file}" --config "$_config" || true
     done
+}
+
+# Upload to all destinations
+FAILED=""
+OK_REMOTES=""
+OK_COUNT=0
+_i=1
+_TOTAL=$(echo "$REMOTE_NAMES" | wc -w | tr -d ' ')
+
+for _remote in $REMOTE_NAMES; do
+  _dir=$(echo "$REMOTE_DIRS" | cut -d' ' -f$_i)
+  if upload_to_remote "$_remote" "$_dir" "$DATE_FILENAME" "$RCLONE_CONFIG_PATH" "$RCLONE_EXTRA_FLAGS"; then
+    OK_COUNT=$((OK_COUNT + 1))
+    OK_REMOTES="${OK_REMOTES} ${_remote}"
+  else
+    FAILED="${FAILED} ${_remote}"
+  fi
+  _i=$((_i + 1))
+done
+
+echo "Upload summary: ${OK_COUNT}/${_TOTAL} remotes ok"
+
+if [ -n "$FAILED" ]; then
+  echo "Warning: Failed remotes:${FAILED}" >&2
 fi
+
+# Retention on each remote
+_i=1
+for _remote in $REMOTE_NAMES; do
+  _dir=$(echo "$REMOTE_DIRS" | cut -d' ' -f$_i)
+  apply_retention "$_remote" "$_dir" "$RCLONE_CONFIG_PATH" "$RCLONE_EXTRA_FLAGS" "$RETENTION_COUNT" "$BACKUP_PREFIX"
+  _i=$((_i + 1))
+done
 
 BACKUP_SUCCESS=true
 echo "Backup completed successfully at $(date)"
-notify_success "Backup completed successfully"
+
+if [ -n "$FAILED" ]; then
+  notify_error "Backup completed with errors. OK: ${OK_COUNT}/${_TOTAL} remotes. Failed:${FAILED}"
+else
+  notify_success "Backup completed successfully"
+fi

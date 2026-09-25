@@ -59,8 +59,36 @@ docker-compose up -d
 | `BW_CLIENTSECRET` | Bitwarden API client secret |
 | `BW_MASTER_PASSWORD` | Master password to unlock the vault |
 | `BACKUP_PASSWORD` | Password to encrypt the backup file |
-| `RCLONE_DEST` | Rclone destination (e.g., `s3:bucket/path`) |
-| `RCLONE_CONFIG_*` | Rclone backend config (see [Storage Backends](#storage-backends)) |
+| `RCLONE_DEST` **or** `RCLONE_REMOTE_NAME` | Single destination (e.g., `s3:bucket/path`) **or** primary remote name for multi-destination mode (see [Multiple Destinations](#multiple-destinations)) |
+
+### Multiple Destinations
+
+Upload backups to multiple rclone remotes in a single run. Follows the same pattern as [ttionya/vaultwarden-backup](https://github.com/ttionya/vaultwarden-backup):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RCLONE_REMOTE_NAME` | `BitwardenBackup` | Primary rclone remote name |
+| `RCLONE_REMOTE_DIR` | `/BitwardenBackup/` | Primary rclone remote directory |
+| `RCLONE_REMOTE_NAME_1` | — | Additional remote name (sequential numbering) |
+| `RCLONE_REMOTE_DIR_1` | — | Additional remote directory |
+| `RCLONE_REMOTE_NAME_N` | — | Continue numbering (2, 3, 4...) for more remotes |
+| `RCLONE_REMOTE_DIR_N` | — | Directory for the Nth remote |
+
+Numbering must be consecutive — a gap in the sequence stops parsing.
+
+Example with three remotes:
+
+```yaml
+environment:
+  - RCLONE_REMOTE_NAME=remote_name_1
+  - RCLONE_REMOTE_DIR=path/to/backup
+  - RCLONE_REMOTE_NAME_1=remote_name_2
+  - RCLONE_REMOTE_DIR_1=path/to/backup
+  - RCLONE_REMOTE_NAME_2=remote_name_3
+  - RCLONE_REMOTE_DIR_2=path/to/backup
+```
+
+If a remote fails, the backup continues to the remaining remotes. A summary is logged and sent via webhook.
 
 ### Optional
 
@@ -69,9 +97,11 @@ docker-compose up -d
 | `BACKUP_CRON` | `0 4 * * *` | Cron schedule (daily at 4am) |
 | `RUN_ONCE` | `false` | Run once and exit (for K8s jobs) |
 | `BACKUP_ON_START` | `false` | Run backup on container start |
-| `RETENTION_COUNT` | `7` | Backups to keep (0 = unlimited) |
+| `RETENTION_COUNT` | `7` | Backups to keep per remote (0 = unlimited) |
 | `BACKUP_FILENAME` | `vaultwarden-%Y-%m-%d.json` | Filename pattern |
 | `TZ` | `UTC` | Timezone for cron |
+| `RCLONE_CONFIG` | `~/.config/rclone/rclone.conf` | Path to rclone config file |
+| `RCLONE_EXTRA_FLAGS` | `--transfers=4 --checkers=8 ...` | Additional flags passed to rclone commands |
 
 ### Organization Export
 
