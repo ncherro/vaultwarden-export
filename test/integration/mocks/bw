@@ -13,6 +13,8 @@ case "$1" in
     echo "fake-session-token"
     ;;
   export)
+    # Log args so the smoke test can assert on them
+    echo "Mock bw export args: $*"
     # Create a fake export file
     output_file=""
     for arg in "$@"; do
