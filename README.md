@@ -22,6 +22,8 @@ This tool uses the **Bitwarden CLI** to create a proper encrypted export:
 
 ## Quick Start
 
+Images are published for `linux/amd64`, `linux/arm64` and `linux/arm/v7`; Docker pulls the right one automatically.
+
 ```yaml
 # docker-compose.yml
 services:

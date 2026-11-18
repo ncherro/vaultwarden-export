@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.24
 
 RUN apk add --no-cache \
     nodejs \
@@ -6,7 +6,7 @@ RUN apk add --no-cache \
     rclone \
     curl \
     tzdata \
-    && npm install -g @bitwarden/cli@2024.9.0 \
+    && npm install -g @bitwarden/cli@2026.9.0 \
     && rm -rf /root/.npm \
     && mkdir -p "/root/.config/Bitwarden CLI" \
     && echo '{}' > "/root/.config/Bitwarden CLI/data.json" \
