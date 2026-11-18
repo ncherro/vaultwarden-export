@@ -1,15 +1,25 @@
 #!/bin/sh
 # Mock rclone
 
+ORG_ID=00000000-0000-0000-0000-000000000000
+
 case "$1" in
   copyto)
     echo "Copied $2 to $3"
     ;;
   lsf)
-    # Return some fake backup files for retention testing
-    echo "vaultwarden-2024-01-01.json"
-    echo "vaultwarden-2024-01-02.json"
-    echo "vaultwarden-2024-01-03.json"
+    # Fake destination listing ("modtime;name", as with --format tp) mixing
+    # user-vault, org-vault, date-only and unrelated files for retention tests
+    echo "2024-01-01 04:00:00;vaultwarden-2024-01-01.json"
+    echo "2024-01-02 04:00:00;vaultwarden-2024-01-02.json"
+    echo "2024-01-03 04:00:00;vaultwarden-2024-01-03.json"
+    echo "2024-01-01 04:00:00;vaultwarden-org-$ORG_ID-2024-01-01.json"
+    echo "2024-01-02 04:00:00;vaultwarden-org-$ORG_ID-2024-01-02.json"
+    echo "2024-01-03 04:00:00;vaultwarden-org-$ORG_ID-2024-01-03.json"
+    echo "2024-01-01 04:00:00;2024-01-01.json"
+    echo "2024-01-02 04:00:00;2024-01-02.json"
+    echo "2024-01-03 04:00:00;2024-01-03.json"
+    echo "2099-01-01 00:00:00;notes.txt"
     ;;
   deletefile)
     echo "Deleted $2"

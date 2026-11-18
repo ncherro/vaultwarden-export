@@ -81,10 +81,14 @@ fi
 
 # Configuration
 RETENTION_COUNT="${RETENTION_COUNT:-7}"
-BACKUP_FILENAME="${BACKUP_FILENAME:-vaultwarden-%Y-%m-%d.json}"
+if [ -n "$ORG_ID" ]; then
+  # Distinct default so user and org exports sharing a destination never
+  # overwrite or prune each other
+  BACKUP_FILENAME="${BACKUP_FILENAME:-vaultwarden-org-${ORG_ID}-%Y-%m-%d.json}"
+else
+  BACKUP_FILENAME="${BACKUP_FILENAME:-vaultwarden-%Y-%m-%d.json}"
+fi
 DATE_FILENAME=$(date +"$BACKUP_FILENAME")
-# Extract prefix for retention matching
-BACKUP_PREFIX=$(get_backup_prefix "$BACKUP_FILENAME")
 
 echo "Starting Vaultwarden backup..."
 echo "  Server: $BW_URL"
@@ -130,15 +134,20 @@ echo "Upload complete."
 if [ "$RETENTION_COUNT" -gt 0 ]; then
   echo "Applying retention policy (keeping $RETENTION_COUNT backups)..."
 
-  # List files matching prefix, sort by name (date), skip the newest N, delete the rest
-  rclone lsf "$RCLONE_DEST" --files-only 2>/dev/null | \
-    grep "^${BACKUP_PREFIX}" | \
-    sort -r | \
-    tail -n +$((RETENTION_COUNT + 1)) | \
-    while read -r file; do
-      echo "  Deleting old backup: $file"
-      rclone deletefile "$RCLONE_DEST/$file" || true
-    done
+  if ! pattern_to_regex "$BACKUP_FILENAME" >/dev/null; then
+    echo "Warning: BACKUP_FILENAME '$BACKUP_FILENAME' uses a date specifier retention can't match; skipping retention" >&2
+  elif ! LISTING=$(rclone lsf "$RCLONE_DEST" --files-only --format tp); then
+    echo "Warning: Could not list $RCLONE_DEST; skipping retention" >&2
+  else
+    # Only files whose whole name matches BACKUP_FILENAME are candidates;
+    # keep the newest N by modification time and never the file just uploaded
+    printf '%s\n' "$LISTING" | \
+      select_backups_to_delete "$BACKUP_FILENAME" "$RETENTION_COUNT" "$DATE_FILENAME" | \
+      while IFS= read -r file; do
+        echo "  Deleting old backup: $file"
+        rclone deletefile "$RCLONE_DEST/$file" || true
+      done
+  fi
 fi
 
 BACKUP_SUCCESS=true

@@ -22,6 +22,22 @@ the `ghcr.io/ncherro/vaultwarden-export` image tags.
   stay on the `0.1` image tag until you can.
 - The image is roughly 100 MB larger uncompressed because of the newer Node.js,
   rclone and Bitwarden CLI.
+- Organization exports (`ORG_ID` set, `BACKUP_FILENAME` unset) now default to
+  `vaultwarden-org-<ORG_ID>-%Y-%m-%d.json`, so they no longer overwrite or
+  prune user-vault backups in the same destination. **Existing org users:**
+  backups made under the old `vaultwarden-*` name are no longer pruned; delete
+  them by hand, or set `BACKUP_FILENAME=vaultwarden-%Y-%m-%d.json` to keep the
+  old name.
+
+### Fixed
+
+- Retention could delete the wrong files (#4, thanks @zeocs). It used to match
+  anything starting with the text before the first `%` in `BACKUP_FILENAME`,
+  so a date-only pattern like `%Y-%m-%d.json` matched every file in the
+  destination and could delete unrelated files or even the newest backup.
+  Retention now only considers files whose whole name matches the pattern,
+  orders them by modification time, never deletes the file just uploaded, and
+  skips itself with a warning if the pattern uses a specifier it can't match.
 
 ## [0.1.2] - 2026-09-25
 
