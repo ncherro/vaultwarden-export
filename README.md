@@ -72,8 +72,18 @@ docker-compose up -d
 | `RUN_ONCE` | `false` | Run once and exit (for K8s jobs) |
 | `BACKUP_ON_START` | `false` | Run backup on container start |
 | `RETENTION_COUNT` | `7` | Backups to keep (0 = unlimited) |
-| `BACKUP_FILENAME` | `vaultwarden-%Y-%m-%d.json` | Filename pattern |
+| `BACKUP_FILENAME` | `vaultwarden-%Y-%m-%d.json` (`vaultwarden-org-<ORG_ID>-%Y-%m-%d.json` with `ORG_ID`) | Filename pattern ([`date` format](https://man7.org/linux/man-pages/man1/date.1.html)) |
 | `TZ` | `UTC` | Timezone for cron |
+
+### Retention
+
+After each upload, retention keeps the newest `RETENTION_COUNT` backups in `RCLONE_DEST` and deletes older ones.
+
+- Only files whose **whole name** matches `BACKUP_FILENAME` are considered, so other files in the destination (including backups from another vault that uses a different pattern) are never touched.
+- "Newest" means most recently modified, so any date order in the filename works.
+- The file just uploaded is never deleted.
+- Supported specifiers: `%Y %y %G %g %m %d %H %I %M %S %j %u %w %U %V %W %s %F %T %a %A %b %B %h %p %%`. If the pattern uses anything else, the backup still runs but retention is skipped with a warning.
+- Give each vault that shares a destination its own `BACKUP_FILENAME`. Two exports with the same pattern overwrite and prune each other.
 
 ### Organization Export
 
@@ -91,6 +101,7 @@ environment:
 - Your Bitwarden account must have sufficient permissions (admin or owner) to export organization data
 - The export format and encryption remain the same (`encrypted_json`)
 - This replaces the user vault export (no combined export)
+- The default filename becomes `vaultwarden-org-<ORG_ID>-%Y-%m-%d.json`, so user and org exports can share a destination
 
 ### Webhook Notifications
 
